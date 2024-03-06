@@ -1,1 +1,3 @@
-# B31DG-H00347680-Assignment2
+David Valente
+
+Welcome to my Assignment2 repo
