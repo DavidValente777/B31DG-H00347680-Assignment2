@@ -157,65 +157,49 @@ void Task4(void *pvParameters) {
 
 void Task5(void *pvParameters) {
     TickType_t xLastWakeTime = xTaskGetTickCount();
-    const TickType_t xFrequency = pdMS_TO_TICKS(200); // Logging period of 200ms
+    const TickType_t xFrequency = pdMS_TO_TICKS(200); //period of 200ms
 
     while (1) {
-        // Scale and bound the frequencies measured by Task 2 and Task 3
-        int scaledFrequency1 = (int)(((measured_frequency_2 - 333) / (1000.0 - 333)) * 99);
-        int scaledFrequency2 = (int)(((measured_frequency_3 - 500) / (1000.0 - 500)) * 99);
+        //scales the frequencies between their thresholds
+        int frequency_2_scaled = (int)(((measured_frequency_2 - 333) / (1000.0 - 333)) * 99);
+        int frequency_3_scaled = (int)(((measured_frequency_3 - 500) / (1000.0 - 500)) * 99);
+        frequency_2_scaled = frequency_2_scaled < 0 ? 0 : frequency_2_scaled > 99 ? 99 : frequency_2_scaled;
+        frequency_3_scaled = frequency_3_scaled < 0 ? 0 : frequency_3_scaled > 99 ? 99 : frequency_3_scaled;
 
-        // Ensure the frequencies are within 0 to 99
-        scaledFrequency1 = scaledFrequency1 < 0 ? 0 : scaledFrequency1 > 99 ? 99 : scaledFrequency1;
-        scaledFrequency2 = scaledFrequency2 < 0 ? 0 : scaledFrequency2 > 99 ? 99 : scaledFrequency2;
-
-        // Directly print the scaled frequencies to the serial port
+        //print scaled frequencies to serial monitor
         Serial.println();
         Serial.print("Scaled frequencies: ");
-        Serial.print(scaledFrequency1);
+        Serial.print(frequency_2_scaled);
         Serial.print(",");
-        Serial.println(scaledFrequency2);
-
-
-        // Delay until the next log period
-        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+        Serial.println(frequency_3_scaled);
+        
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);    // waits until next log period
     }
 }
 
 
 void Task6(void *pvParameters) {
-
-    int lastButtonState = HIGH;  // the previous reading from the input pin
-    int buttonState;             // the current reading from the input pin
+    int previous_button_state = HIGH;  
+    int button_state;             
 
     while (1) {
-        // Read the state of the switch into a local variable:
-        int reading = digitalRead(BUTTON);
+        int reading = digitalRead(BUTTON);    //read the state of the button
 
-        // Check if the pushbutton is pressed.
-        // If the current state is different from the last state,
-        // reset the debouncing timer
-        if (reading != lastButtonState) {
+        if (reading != previous_button_state) {
             last_debounce = millis();
         }
-        if ((millis() - last_debounce) > debounce) {
-            // whatever the reading is at, it's been there for longer than the debounce
-            // delay, so take it as the actual current state:
+        if ((millis() - last_debounce) > debounce) {    //update current state of button
 
             // if the button state has changed:
-            if (reading != buttonState) {
-                buttonState = reading;
-
-                // only toggle the LED if the new button state is HIGH
-                if (buttonState == HIGH) {
+            if (reading != button_state) {
+                button_state = reading;
+                if (button_state == HIGH) {           //turn ON LED if its state is HIGH
                     led_state = !led_state;
                     digitalWrite(LED2, led_state);
                 }
             }
         }
-        // Save the reading. Next time through the loop, it'll be the lastButtonState:
-        lastButtonState = reading;
-
-        // Small delay to prevent bouncing
+        previous_button_state = reading;      //update reading
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
@@ -226,58 +210,50 @@ void Task7_CPUWork(void *pvParameters) {
 
     while (1) {
         // Capture start time
-        unsigned long startTime = micros();
+        unsigned long start = micros();   //timestamps the start time
 
-        CPU_work(2); // Call CPU_work to busy the CPU for approximately 2ms
+        CPU_work(2); // Call CPU_work to busy the CPU for 2ms or 2000 microseconds
 
-        // Capture end time and calculate duration
-        unsigned long endTime = micros();
-        unsigned long duration = endTime - startTime;
-
-        // Print the duration that CPU_work took
+        unsigned long end = micros();
+        unsigned long duration = end - start;
+        //print to serial monitor how long it took
         Serial.println();
-        Serial.print("CPU_work duration: ");
+        Serial.print("CPU_work time: ");
         Serial.print(duration);
         Serial.println(" microseconds");
-
-        // Wait for the next cycle, ensuring the task runs with a period of 20ms
-        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+        
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);    // Wait for the next cycle, ensuring the task runs with a period of 20ms
     }
 }
 
 
-
 void CPU_work(int time) {
-    // Calibrated loop count per millisecond (example value, adjust based on your calibration)
-    volatile long loopCountPerMs = 33850; // Based on 16MHz processor
+    volatile long iterations_per_millisecond = 33850; //calibrate this valued
+    long cycles = time * iterations_per_millisecond;
 
-    long loops = time * loopCountPerMs;
-
-    for(long i = 0; i < loops; i++) {
+    for(long i = 0; i < cycles; i++) {
         __asm__("nop"); // Assembly instruction for "no operation"
     }
 }
 
-// ISR for detecting rising edges on the square wave pin
-void IRAM_ATTR rising_edge_2() {
+
+void IRAM_ATTR rising_edge_2() {              //this method is used to detect the rising edges for the signal in Task2
   unsigned long currentTime = micros();
   if(lastRiseTime2 > 0) {
-    // Calculate frequency: F = 1 / T
     unsigned long period = currentTime - lastRiseTime2;
-    measured_frequency_2 = 1000000.0 / period; // Convert period from µs to seconds
+    measured_frequency_2 = 1000000.0 / period;
   }
   lastRiseTime2 = currentTime;
 }
-void IRAM_ATTR rising_edge_3() {
+
+void IRAM_ATTR rising_edge_3() {            //this method is used to detect the rising edges for the signal in Task3
   unsigned long currentTime = micros();
   if(lastRiseTime3 > 0) {
-    // Calculate frequency: F = 1 / T
     unsigned long period = currentTime - lastRiseTime3;
-    measured_frequency_3 = 1000000.0 / period; // Convert period from µs to seconds
+    measured_frequency_3 = 1000000.0 / period;
   }
   lastRiseTime3 = currentTime;
 }
 
 void loop(){
-  // Leave empty for FreeRTOS
 }
