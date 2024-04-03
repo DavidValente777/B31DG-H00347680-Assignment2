@@ -134,35 +134,23 @@ void Task4(void *pvParameters) {
     xLastWakeTime = xTaskGetTickCount();
 
     const int max_potentiometer_value = 4095; // Maximum value of the potentiometer. 2^12
-    const int error = max_potentiometer_value / 2; // Error threshold is half the maximum
+    const int error = max_potentiometer_value / 2; 
 
     while (1) {
-        int currentValue = analogRead(POTENTIOMETER);
-
-        // Update the total sum by subtracting the oldest value and adding the new value
-        sum = sum - readValues[reading] + currentValue;
-
-        // Store the current value in the array
-        readValues[reading] = currentValue;
-
-        // Update the index for the next read
+        int current_val = analogRead(POTENTIOMETER);
+        sum = sum - readValues[reading] + current_val;
+        readValues[reading] = current_val;
         reading = (reading + 1) % LAST10;
-
-        // Update the running average
         average = sum / (float)LAST10;
-
-        // Check if the running average exceeds the error threshold
         if (average > error) {
-            digitalWrite (LED1, HIGH); // Turn on the LED to indicate error
-        } else {
-            digitalWrite (LED1, LOW); // Turn off the LED
+            digitalWrite (LED1, HIGH); 
+        } 
+        else {
+            digitalWrite (LED1, LOW); 
         }
+        Serial.print("Average (last 10 readings): ");
+        Serial.println(average, 2); 
 
-        // Print the running average every sample cycle
-        Serial.print("Running Average: ");
-        Serial.println(average, 2); // Print with 2 decimal places
-
-        // Delay until the next sample period
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
 }
