@@ -65,13 +65,13 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(SIGNAL3), rising_edge_3, RISING);
 
   //Creating tasks
-  xTaskCreate(Task1, "Task1", 1000, NULL, 2, NULL);
-  xTaskCreate(Task2, "Task2", 1000, NULL, 3, NULL);
-  xTaskCreate(Task3, "Task3", 1000, NULL, 2, NULL);
-  xTaskCreate(Task4_SampleAnalogueInput, "Task4_SampleAnalogInput", 1000, NULL, 2, NULL);
-  xTaskCreate(Task5_LogFrequencies, "LogInformation", 1000, NULL, 2, NULL);
-  xTaskCreate(Task6_ControlLED, "Task6_ControlLED", 2048, NULL, 1, NULL);  
-  xTaskCreate(Task7_CPUWork, "CPUWork", 1000, NULL, 1, NULL);
+  xTaskCreate(Task1, "Task1", 1024, NULL, 2, NULL);
+  xTaskCreate(Task2, "Task2", 1024, NULL, 3, NULL);
+  xTaskCreate(Task3, "Task3", 1024, NULL, 2, NULL);
+  xTaskCreate(Task4, "Task4", 1024, NULL, 2, NULL);
+  xTaskCreate(Task5, "Task5", 1024, NULL, 2, NULL);
+  xTaskCreate(Task6, "Task6", 2048, NULL, 1, NULL);  
+  xTaskCreate(Task7_CPUWork, "CPUWork", 1024, NULL, 1, NULL);
 }
 
 void Task1(void *pvParameters){
@@ -126,7 +126,7 @@ void Task3(void *pvParameters){
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
-void Task4_SampleAnalogueInput(void *pvParameters) {
+void Task4(void *pvParameters) {
     int readValues[LAST10] = {0}; // Array to store recent readings
     int readIndex = 0; // Current index in the readings array
     long sum = 0; // Sum of the readings for calculating the average
@@ -169,7 +169,7 @@ void Task4_SampleAnalogueInput(void *pvParameters) {
     }
 }
 
-void Task5_LogFrequencies(void *pvParameters) {
+void Task5(void *pvParameters) {
     TickType_t xLastWakeTime = xTaskGetTickCount();
     const TickType_t xFrequency = pdMS_TO_TICKS(200); // Logging period of 200ms
 
@@ -196,7 +196,7 @@ void Task5_LogFrequencies(void *pvParameters) {
 }
 
 
-void Task6_ControlLED(void *pvParameters) {
+void Task6(void *pvParameters) {
 
     int lastButtonState = HIGH;  // the previous reading from the input pin
     int buttonState;             // the current reading from the input pin
