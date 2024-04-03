@@ -76,85 +76,83 @@ void setup() {
 
 void Task1(void *pvParameters){
   while(1){
-    digitalWrite(DIGITAL_SIGNAL  , HIGH);
+    digitalWrite(DIGITAL_SIGNAL, HIGH);
     delayMicroseconds(180);
-    digitalWrite(DIGITAL_SIGNAL  , LOW);
+    digitalWrite(DIGITAL_SIGNAL, LOW);
     delayMicroseconds(40);
-    digitalWrite(DIGITAL_SIGNAL  , HIGH);
+    digitalWrite(DIGITAL_SIGNAL, HIGH);
     delayMicroseconds(530);
-    digitalWrite(DIGITAL_SIGNAL  , LOW);
+    digitalWrite(DIGITAL_SIGNAL, LOW);
     delayMicroseconds(250);
     vTaskDelay(3/portTICK_RATE_MS);
   }
 }
-// Task 2 - measure frequency within range of 333Hz & 1KHz
+
 void Task2(void *pvParameters) {
   TickType_t xLastWakeTime;
-  const TickType_t xFrequency = pdMS_TO_TICKS(20); // 20ms in tick period
+  const TickType_t xFrequency = pdMS_TO_TICKS(20); // 20ms tick period
   xLastWakeTime = xTaskGetTickCount();
 
   while(1) {
-    // Check if the frequency is within the desired range
-    if(measured_frequency_2 >= 333 && measured_frequency_2 <= 1000) {
-      Serial.print("Task 2 Measured Frequency @ 20ms: ");
-      Serial.println(measured_frequency_2, 2); // Print with 2 decimal places
-    } else {
-      // Handle out-of-range frequency
-      Serial.println("Task 2 Frequency ## OUT OF RANGE ## @ 20ms: ");
+    if(measured_frequency_2 >= 333 && measured_frequency_2 <= 1000) {     //checks if the frequency is between 333Hz and 1000Hz
+      Serial.print("Task 2 Measured Frequency(Hz): ");
+      Serial.println(measured_frequency_2, 2); 
+    } 
+    else {
+      Serial.println("Task 2 Frequency invalid ");
     }
-    // Wait for the next cycle
-    vTaskDelayUntil(&xLastWakeTime, xFrequency);
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);  // Wait for the next cycle
   }
 }
 
-// Task 3 - measure frequency within range of 500Hz & 1KHz
+
 void Task3(void *pvParameters){
   TickType_t xLastWakeTime;
-  const TickType_t xFrequency = pdMS_TO_TICKS(8); // 8ms in tick period
+  const TickType_t xFrequency = pdMS_TO_TICKS(8); // 8ms tick period
   xLastWakeTime = xTaskGetTickCount();
 
   while(1) {
-    // Check if the frequency is within the desired range
-    if(measured_frequency_3 >= 500 && measured_frequency_3 <= 1000) {
-      Serial.print("Task 3 Measured Frequency @ 8ms: ");
-      Serial.println(measured_frequency_3, 2); // Print with 2 decimal places
-    } else {
-      // Handle out-of-range frequency
-      Serial.println(" | Task 3 Frequency ## OUT OF RANGE ## @ 8ms");
+    if(measured_frequency_3 >= 500 && measured_frequency_3 <= 1000) {   //checks if the frequency is between 500Hz and 1000Hz
+      Serial.print("Task 3 Measured Frequency(Hz): ");
+      Serial.println(measured_frequency_3, 2); 
+    } 
+    else {
+      Serial.println("Task 3 Frequency invalid ");
     }
-    // Wait for the next cycle
-    vTaskDelayUntil(&xLastWakeTime, xFrequency);
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);      // Wait for the next cycle
   }
 }
+
+
 void Task4(void *pvParameters) {
-    int readValues[LAST10] = {0}; // Array to store recent readings
-    int readIndex = 0; // Current index in the readings array
-    long sum = 0; // Sum of the readings for calculating the average
+    long sum = 0; //adds all the readings
+    int readValues[LAST10] = {0}; //stores last 10 readings in an array
+    int reading = 0; //current readings index
+    
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = pdMS_TO_TICKS(20); // Sampling frequency - 20ms
-
     xLastWakeTime = xTaskGetTickCount();
-    const int maxAnalogValue = 4095; // Maximum value for the ADC
-    const int errorThreshold = maxAnalogValue / 2; // Error threshold is half the maximum
+
+    const int max_potentiometer_value = 4095; // Maximum value of the potentiometer. 2^12
+    const int error = max_potentiometer_value / 2; // Error threshold is half the maximum
 
     while (1) {
-        // Read the current value from the analog pin
         int currentValue = analogRead(POTENTIOMETER);
 
         // Update the total sum by subtracting the oldest value and adding the new value
-        sum = sum - readValues[readIndex] + currentValue;
+        sum = sum - readValues[reading] + currentValue;
 
         // Store the current value in the array
-        readValues[readIndex] = currentValue;
+        readValues[reading] = currentValue;
 
         // Update the index for the next read
-        readIndex = (readIndex + 1) % LAST10;
+        reading = (reading + 1) % LAST10;
 
         // Update the running average
         average = sum / (float)LAST10;
 
         // Check if the running average exceeds the error threshold
-        if (average > errorThreshold) {
+        if (average > error) {
             digitalWrite (LED1, HIGH); // Turn on the LED to indicate error
         } else {
             digitalWrite (LED1, LOW); // Turn off the LED
