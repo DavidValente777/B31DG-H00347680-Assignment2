@@ -1,95 +1,103 @@
-// Function Prototypes
-void Task1_SignalGeneration(void *pvParameters);
-void Task2_Measurefrequency(void *pvParameters);
-void Task3_Measurefrequency(void *pvParameters);
-void Task4_SampleAnalogueInput(void *pvParameters);
-void Task5_LogFrequencies(void *pvParameters);
-void Task6_ControlLED(void *pvParameters);
+//Assignment 2
+//Author: David Valente
 
-void IRAM_ATTR handle_rising_edge_task2();
-void IRAM_ATTR handle_rising_edge_task3();
-
-// Pin Definitions
-      
-#define PUSHBUTTON_PIN    23 // Push button is connected to GPIO Pin 23
-#define LED_PIN_1         15 // Red LED is connected to GPIO Pin 15 for potentiometer Task4
-#define LED_PIN_2         21 // Orange LED is connected to GPIO Pin 21 for pushButton Task6
-#define POTENTIOMETER_PIN 32 // Potentiometer is connected to GPIO Pin 32
-#define SQUARE_WAVE_PIN_1 22 // Pin connected to the square wave signal on GPIO Pin 22 (Task2 between 333Hz & 1000Hz)
-#define SQUARE_WAVE_PIN_2 19 // Pin connected to the square wave signal on GPIO Pin 19 (Task3 between 500Hz and 1000Hz)
-#define SAMPLE_SIZE       10// Total number of samples for calulating the running average of analogue input
-#define SIGNAL_OUTPUT_PIN 16 //Output pin for Task1
+//This ensures that only one core of the ESP32 is used
+#if CONFIG_FREERTOS_UNICORE
+static const BaseType_t app_cpu = 0;
+#else
+static const BaseType_t app_cpu = 1;
+#endif
 
 
-//Task 6 Variables
-volatile bool ledState = LOW;
-unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
-unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
+void IRAM_ATTR rising_edge_2();
+void IRAM_ATTR rising_edge_3();
 
-// Global Variables for Frequency Measurement
-volatile unsigned long lastRiseTime2 = 0;
+// Initialise pins 
+
+//Task1
+#define DIGITAL_SIGNAL    16 // Output pin for Task1. Connect to pin 16
+//Task2
+#define SIGNAL2           22 // Input square wave for Task2 between 333Hz & 1000Hz. Connect to pin 22
+//Task3
+#define SIGNAL3           19 // Input square wave for Task3 between 500Hz and 1000Hz. Connect to pin 19
+//Task4
+#define POTENTIOMETER     32 // Output pin for potentiometer. Connect to pin 32 
+#define LAST10            10 // Holds the last 10 values of the analogue reading of the potentiometer
+#define LED1              15 // Output pin for red LED. Connect to pin 15
+//Task6
+#define BUTTON            23 // Input pin for button. Connect to pin 23
+#define LED2              21 // Output pin for orange LED. Connect to pin 21
 
 
-volatile unsigned long lastRiseTime3 = 0;
-// Task 2 Variable
-volatile float measured_frequency_1 = 0;
-// Task 3 Variables
+//Variables
+
+//Task2
 volatile float measured_frequency_2 = 0;
-// Task 4 Variables
-volatile float runningAverage = 0.0;
+volatile unsigned long lastRiseTime2 = 0;
+//Task3
+volatile float measured_frequency_3 = 0;
+volatile unsigned long lastRiseTime3 = 0;
+//Task4
+volatile float average = 0.0;
+//Task6
+unsigned long debounce = 60;    
+unsigned long last_debounce = 0;  
+volatile bool led_state = LOW;
+
 
 void setup() {
-  Serial.begin(115200);
-  pinMode(LED_PIN_1, OUTPUT);
-  pinMode(LED_PIN_2, OUTPUT);
-  pinMode(POTENTIOMETER_PIN, INPUT);
-  pinMode(SQUARE_WAVE_PIN_1, INPUT_PULLUP);
-  pinMode(SQUARE_WAVE_PIN_2, INPUT_PULLUP);
-  pinMode(PUSHBUTTON_PIN, INPUT_PULLDOWN); // Set the pushbutton pin as input with internal pull-up
-  pinMode(SIGNAL_OUTPUT_PIN, OUTPUT);
+  Serial.begin(115200);             //begin serial monitor with a baud rate of 115200 
+  //Task1
+  pinMode(DIGITAL_SIGNAL,OUTPUT);
+  //Task2
+  pinMode(SIGNAL2, INPUT_PULLUP);
+  //Task3
+  pinMode(SIGNAL3, INPUT_PULLUP);
+  //Task4
+  pinMode(POTENTIOMETER, INPUT);
+  pinMode(LED1, OUTPUT);
+  //Task6
+  pinMode(BUTTON,INPUT_PULLDOWN);       
+  pinMode(LED2, OUTPUT);
+  
+  //Interrupts
+  attachInterrupt(digitalPinToInterrupt(SIGNAL2), rising_edge_2, RISING);
+  attachInterrupt(digitalPinToInterrupt(SIGNAL3), rising_edge_3, RISING);
 
-  attachInterrupt(digitalPinToInterrupt(SQUARE_WAVE_PIN_1), handle_rising_edge_task2, RISING);
-  attachInterrupt(digitalPinToInterrupt(SQUARE_WAVE_PIN_2), handle_rising_edge_task3, RISING);
-
-  /*
-   * Create FreeRTOS task for measuring frequency
-   * xTaskCreate(Task function, "Task name", Stack size, Task input parameter, Priority, Task handle);
-  */
-
-  xTaskCreate(Task1_SignalGeneration, "Task1_Signalgeneration", 1000, NULL, 2, NULL);
-  xTaskCreate(Task2_Measurefrequency, "Task2_Measurefrequency", 1000, NULL, 3, NULL);
-  xTaskCreate(Task3_Measurefrequency, "Task3_Measurefrequency", 1000, NULL, 2, NULL);
+  //Creating tasks
+  xTaskCreate(Task1, "Task1", 1000, NULL, 2, NULL);
+  xTaskCreate(Task2, "Task2", 1000, NULL, 3, NULL);
+  xTaskCreate(Task3, "Task3", 1000, NULL, 2, NULL);
   xTaskCreate(Task4_SampleAnalogueInput, "Task4_SampleAnalogInput", 1000, NULL, 2, NULL);
   xTaskCreate(Task5_LogFrequencies, "LogInformation", 1000, NULL, 2, NULL);
   xTaskCreate(Task6_ControlLED, "Task6_ControlLED", 2048, NULL, 1, NULL);  
   xTaskCreate(Task7_CPUWork, "CPUWork", 1000, NULL, 1, NULL);
 }
 
-void Task1_SignalGeneration(void *pvParameters){
+void Task1(void *pvParameters){
   while(1){
-    digitalWrite(SIGNAL_OUTPUT_PIN, HIGH);
+    digitalWrite(DIGITAL_SIGNAL  , HIGH);
     delayMicroseconds(180);
-    digitalWrite(SIGNAL_OUTPUT_PIN, LOW);
+    digitalWrite(DIGITAL_SIGNAL  , LOW);
     delayMicroseconds(40);
-    digitalWrite(SIGNAL_OUTPUT_PIN, HIGH);
+    digitalWrite(DIGITAL_SIGNAL  , HIGH);
     delayMicroseconds(530);
-    digitalWrite(SIGNAL_OUTPUT_PIN, LOW);
+    digitalWrite(DIGITAL_SIGNAL  , LOW);
     delayMicroseconds(250);
     vTaskDelay(3/portTICK_RATE_MS);
   }
-
 }
 // Task 2 - measure frequency within range of 333Hz & 1KHz
-void Task2_Measurefrequency(void *pvParameters) {
+void Task2(void *pvParameters) {
   TickType_t xLastWakeTime;
   const TickType_t xFrequency = pdMS_TO_TICKS(20); // 20ms in tick period
   xLastWakeTime = xTaskGetTickCount();
 
   while(1) {
     // Check if the frequency is within the desired range
-    if(measured_frequency_1 >= 333 && measured_frequency_1 <= 1000) {
+    if(measured_frequency_2 >= 333 && measured_frequency_2 <= 1000) {
       Serial.print("Task 2 Measured Frequency @ 20ms: ");
-      Serial.println(measured_frequency_1, 2); // Print with 2 decimal places
+      Serial.println(measured_frequency_2, 2); // Print with 2 decimal places
     } else {
       // Handle out-of-range frequency
       Serial.println("Task 2 Frequency ## OUT OF RANGE ## @ 20ms: ");
@@ -100,16 +108,16 @@ void Task2_Measurefrequency(void *pvParameters) {
 }
 
 // Task 3 - measure frequency within range of 500Hz & 1KHz
-void Task3_Measurefrequency(void *pvParameters){
+void Task3(void *pvParameters){
   TickType_t xLastWakeTime;
   const TickType_t xFrequency = pdMS_TO_TICKS(8); // 8ms in tick period
   xLastWakeTime = xTaskGetTickCount();
 
   while(1) {
     // Check if the frequency is within the desired range
-    if(measured_frequency_2 >= 500 && measured_frequency_2 <= 1000) {
+    if(measured_frequency_3 >= 500 && measured_frequency_3 <= 1000) {
       Serial.print("Task 3 Measured Frequency @ 8ms: ");
-      Serial.println(measured_frequency_2, 2); // Print with 2 decimal places
+      Serial.println(measured_frequency_3, 2); // Print with 2 decimal places
     } else {
       // Handle out-of-range frequency
       Serial.println(" | Task 3 Frequency ## OUT OF RANGE ## @ 8ms");
@@ -119,7 +127,7 @@ void Task3_Measurefrequency(void *pvParameters){
   }
 }
 void Task4_SampleAnalogueInput(void *pvParameters) {
-    int readValues[SAMPLE_SIZE] = {0}; // Array to store recent readings
+    int readValues[LAST10] = {0}; // Array to store recent readings
     int readIndex = 0; // Current index in the readings array
     long sum = 0; // Sum of the readings for calculating the average
     TickType_t xLastWakeTime;
@@ -131,7 +139,7 @@ void Task4_SampleAnalogueInput(void *pvParameters) {
 
     while (1) {
         // Read the current value from the analog pin
-        int currentValue = analogRead(POTENTIOMETER_PIN);
+        int currentValue = analogRead(POTENTIOMETER);
 
         // Update the total sum by subtracting the oldest value and adding the new value
         sum = sum - readValues[readIndex] + currentValue;
@@ -140,21 +148,21 @@ void Task4_SampleAnalogueInput(void *pvParameters) {
         readValues[readIndex] = currentValue;
 
         // Update the index for the next read
-        readIndex = (readIndex + 1) % SAMPLE_SIZE;
+        readIndex = (readIndex + 1) % LAST10;
 
         // Update the running average
-        runningAverage = sum / (float)SAMPLE_SIZE;
+        average = sum / (float)LAST10;
 
         // Check if the running average exceeds the error threshold
-        if (runningAverage > errorThreshold) {
-            digitalWrite(LED_PIN_1, HIGH); // Turn on the LED to indicate error
+        if (average > errorThreshold) {
+            digitalWrite (LED1, HIGH); // Turn on the LED to indicate error
         } else {
-            digitalWrite(LED_PIN_1, LOW); // Turn off the LED
+            digitalWrite (LED1, LOW); // Turn off the LED
         }
 
         // Print the running average every sample cycle
         Serial.print("Running Average: ");
-        Serial.println(runningAverage, 2); // Print with 2 decimal places
+        Serial.println(average, 2); // Print with 2 decimal places
 
         // Delay until the next sample period
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
@@ -167,8 +175,8 @@ void Task5_LogFrequencies(void *pvParameters) {
 
     while (1) {
         // Scale and bound the frequencies measured by Task 2 and Task 3
-        int scaledFrequency1 = (int)(((measured_frequency_1 - 333) / (1000.0 - 333)) * 99);
-        int scaledFrequency2 = (int)(((measured_frequency_2 - 500) / (1000.0 - 500)) * 99);
+        int scaledFrequency1 = (int)(((measured_frequency_2 - 333) / (1000.0 - 333)) * 99);
+        int scaledFrequency2 = (int)(((measured_frequency_3 - 500) / (1000.0 - 500)) * 99);
 
         // Ensure the frequencies are within 0 to 99
         scaledFrequency1 = scaledFrequency1 < 0 ? 0 : scaledFrequency1 > 99 ? 99 : scaledFrequency1;
@@ -195,15 +203,15 @@ void Task6_ControlLED(void *pvParameters) {
 
     while (1) {
         // Read the state of the switch into a local variable:
-        int reading = digitalRead(PUSHBUTTON_PIN);
+        int reading = digitalRead(BUTTON);
 
         // Check if the pushbutton is pressed.
         // If the current state is different from the last state,
         // reset the debouncing timer
         if (reading != lastButtonState) {
-            lastDebounceTime = millis();
+            last_debounce = millis();
         }
-        if ((millis() - lastDebounceTime) > debounceDelay) {
+        if ((millis() - last_debounce) > debounce) {
             // whatever the reading is at, it's been there for longer than the debounce
             // delay, so take it as the actual current state:
 
@@ -213,8 +221,8 @@ void Task6_ControlLED(void *pvParameters) {
 
                 // only toggle the LED if the new button state is HIGH
                 if (buttonState == HIGH) {
-                    ledState = !ledState;
-                    digitalWrite(LED_PIN_2, ledState);
+                    led_state = !led_state;
+                    digitalWrite(LED2, led_state);
                 }
             }
         }
@@ -265,21 +273,21 @@ void CPU_work(int time) {
 }
 
 // ISR for detecting rising edges on the square wave pin
-void IRAM_ATTR handle_rising_edge_task2() {
+void IRAM_ATTR rising_edge_2() {
   unsigned long currentTime = micros();
   if(lastRiseTime2 > 0) {
     // Calculate frequency: F = 1 / T
     unsigned long period = currentTime - lastRiseTime2;
-    measured_frequency_1 = 1000000.0 / period; // Convert period from µs to seconds
+    measured_frequency_2 = 1000000.0 / period; // Convert period from µs to seconds
   }
   lastRiseTime2 = currentTime;
 }
-void IRAM_ATTR handle_rising_edge_task3() {
+void IRAM_ATTR rising_edge_3() {
   unsigned long currentTime = micros();
   if(lastRiseTime3 > 0) {
     // Calculate frequency: F = 1 / T
     unsigned long period = currentTime - lastRiseTime3;
-    measured_frequency_2 = 1000000.0 / period; // Convert period from µs to seconds
+    measured_frequency_3 = 1000000.0 / period; // Convert period from µs to seconds
   }
   lastRiseTime3 = currentTime;
 }
