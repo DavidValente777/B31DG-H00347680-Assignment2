@@ -69,13 +69,13 @@ void setup() {
 
   //Preemptive scheduler
   //Creating tasks
-  xTaskCreate(Task1, "Task1", 1024, NULL, 2, NULL);
-  xTaskCreate(Task2, "Task2", 1024, NULL, 3, NULL);
-  xTaskCreate(Task3, "Task3", 1024, NULL, 2, NULL);
+  xTaskCreate(Task1, "Task1", 1024, NULL, 4, NULL);
+  xTaskCreate(Task2, "Task2", 1024, NULL, 2, NULL);
+  xTaskCreate(Task3, "Task3", 1024, NULL, 3, NULL);
   xTaskCreate(Task4, "Task4", 1024, NULL, 2, NULL);
-  xTaskCreate(Task5, "Task5", 1024, NULL, 2, NULL);
-  xTaskCreate(Task6, "Task6", 2048, NULL, 1, NULL);  
-  xTaskCreate(Task7_CPUWork, "CPUWork", 1024, NULL, 1, NULL);
+  xTaskCreate(Task5, "Task5", 1024, NULL, 1, NULL);
+  xTaskCreate(Task6, "Task6", 2048, NULL, 2, NULL);  
+  xTaskCreate(Task7, "Task7", 1024, NULL, 2, NULL);
 }
 
 void Task1(void *pvParameters){
@@ -208,7 +208,7 @@ void Task6(void *pvParameters) {
     }
 }
 
-void Task7_CPUWork(void *pvParameters) {
+void Task7(void *pvParameters) {
     TickType_t xLastWakeTime = xTaskGetTickCount();
     const TickType_t xFrequency = pdMS_TO_TICKS(20); // 20ms period
 
@@ -232,7 +232,7 @@ void Task7_CPUWork(void *pvParameters) {
 
 
 void CPU_work(int time) {
-    volatile long iterations_per_millisecond = 33850; //calibrate this value
+    volatile long iterations_per_millisecond = 34060; //calibrate this value
     long cycles = time * iterations_per_millisecond;
 
     for(long i = 0; i < cycles; i++) {
