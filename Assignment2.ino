@@ -8,6 +8,9 @@ static const BaseType_t app_cpu = 0;
 static const BaseType_t app_cpu = 1;
 #endif
 
+//Interrupt Service Routines (ISRs): In the provided code, the functions rising_edge_2() and rising_edge_3() are interrupt service routines (ISRs).
+//These functions are executed in response to external events (rising edges on specific pins). 
+//Since ISRs need to respond quickly to events, placing them in IRAM can reduce their latency and improve their responsiveness.
 
 void IRAM_ATTR rising_edge_2();
 void IRAM_ATTR rising_edge_3();
@@ -64,6 +67,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(SIGNAL2), rising_edge_2, RISING);
   attachInterrupt(digitalPinToInterrupt(SIGNAL3), rising_edge_3, RISING);
 
+  //Preemptive scheduler
   //Creating tasks
   xTaskCreate(Task1, "Task1", 1024, NULL, 2, NULL);
   xTaskCreate(Task2, "Task2", 1024, NULL, 3, NULL);
@@ -228,7 +232,7 @@ void Task7_CPUWork(void *pvParameters) {
 
 
 void CPU_work(int time) {
-    volatile long iterations_per_millisecond = 33850; //calibrate this valued
+    volatile long iterations_per_millisecond = 33850; //calibrate this value
     long cycles = time * iterations_per_millisecond;
 
     for(long i = 0; i < cycles; i++) {
@@ -237,8 +241,8 @@ void CPU_work(int time) {
 }
 
 
-void IRAM_ATTR rising_edge_2() {              //this method is used to detect the rising edges for the signal in Task2
-  unsigned long currentTime = micros();
+void IRAM_ATTR rising_edge_2() {              //this method is used to detect the rising edges for the signal in Task2  Instruction RAM attribute
+  unsigned long currentTime = micros();       //this is placed in the instruction RAM instead of flash memory (faster)
   if(lastRiseTime2 > 0) {
     unsigned long period = currentTime - lastRiseTime2;
     measured_frequency_2 = 1000000.0 / period;
