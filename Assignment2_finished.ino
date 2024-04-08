@@ -79,13 +79,13 @@ void setup() {
 
   //Preemptive scheduler
   //Creating tasks
-  xTaskCreate(Task1, "Task1", 1024, NULL, 4, NULL);
-  xTaskCreate(Task2, "Task2", 1024, NULL, 2, NULL);
-  xTaskCreate(Task3, "Task3", 1024, NULL, 3, NULL);
-  xTaskCreate(Task4, "Task4", 1024, NULL, 2, NULL);
-  xTaskCreate(Task5, "Task5", 1024, NULL, 1, NULL);
-  xTaskCreate(Task6, "Task6", 2048, NULL, 2, NULL);  
-  xTaskCreate(Task7, "Task7", 1024, NULL, 2, NULL);
+  xTaskCreate(Task1, "Task1", 2048, NULL, 1, NULL);
+  xTaskCreate(Task2, "Task2", 2048, NULL, 1, NULL);
+  xTaskCreate(Task3, "Task3", 2048, NULL, 1, NULL);
+  xTaskCreate(Task4, "Task4", 2048, NULL, 1, NULL);
+  xTaskCreate(Task5, "Task5", 2048, NULL, 1, NULL);
+  xTaskCreate(Task6, "Task6", 2048, NULL, 1, NULL);  
+  xTaskCreate(Task7, "Task7", 2048, NULL, 1, NULL);
 }
 
 void Task1(void *pvParameters){
@@ -114,11 +114,11 @@ void Task2(void *pvParameters) {
     xSemaphoreGive (task2_dataSemaphore);
 
     if(final_measured_frequency_2 >= 333 && final_measured_frequency_2 <= 1000) {     //checks if the frequency is between 333Hz and 1000Hz
-      Serial.print("Task 2 Measured Frequency(Hz): ");
-      Serial.println(final_measured_frequency_2, 2); 
+     // Serial.print("Task 2 Measured Frequency(Hz): ");
+      //Serial.println(final_measured_frequency_2, 2); 
     } 
     else {
-      Serial.println("Task 2 Frequency invalid ");
+      //Serial.println("Task 2 Frequency invalid ");
     }
     vTaskDelayUntil(&xLastWakeTime, xFrequency);  // Wait for the next cycle
   }
@@ -136,11 +136,11 @@ void Task3(void *pvParameters){
     xSemaphoreGive (task2_dataSemaphore);
 
     if(final_measured_frequency_3 >= 500 && final_measured_frequency_3 <= 1000) {   //checks if the frequency is between 500Hz and 1000Hz
-      Serial.print("Task 3 Measured Frequency(Hz): ");
-      Serial.println(final_measured_frequency_3, 2); 
+      //Serial.print("Task 3 Measured Frequency(Hz): ");
+      //Serial.println(final_measured_frequency_3, 2); 
     } 
     else {
-      Serial.println("Task 3 Frequency invalid ");
+      //Serial.println("Task 3 Frequency invalid ");
     }
     vTaskDelayUntil(&xLastWakeTime, xFrequency);      // Wait for the next cycle
   }
@@ -171,8 +171,8 @@ void Task4(void *pvParameters) {
         else {
             digitalWrite (LED1, LOW); 
         }
-        Serial.print("Average (last 10 readings): ");
-        Serial.println(average, 2); 
+        //Serial.print("Average (last 10 readings): ");
+        //Serial.println(average, 2); 
 
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
@@ -244,10 +244,10 @@ void Task7(void *pvParameters) {
         unsigned long end = micros();
         unsigned long duration = end - start;
         //print to serial monitor how long it took
-        Serial.println();
-        Serial.print("CPU_work time: ");
-        Serial.print(duration);
-        Serial.println(" microseconds");
+        //Serial.println();
+        //Serial.print("CPU_work time: ");
+        //Serial.print(duration);
+       // Serial.println(" microseconds");
         
         vTaskDelayUntil(&xLastWakeTime, xFrequency);    // Wait for the next cycle, ensuring the task runs with a period of 20ms
     }
