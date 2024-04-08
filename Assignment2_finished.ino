@@ -79,13 +79,13 @@ void setup() {
 
   //Preemptive scheduler
   //Creating tasks
-  xTaskCreate(Task1, "Task1", 1024, NULL, 2, NULL);
-  xTaskCreate(Task2, "Task2", 1024, NULL, 3, NULL);
-  xTaskCreate(Task3, "Task3", 1024, NULL, 2, NULL);
+  xTaskCreate(Task1, "Task1", 1024, NULL, 4, NULL);
+  xTaskCreate(Task2, "Task2", 1024, NULL, 2, NULL);
+  xTaskCreate(Task3, "Task3", 1024, NULL, 3, NULL);
   xTaskCreate(Task4, "Task4", 1024, NULL, 2, NULL);
-  xTaskCreate(Task5, "Task5", 1024, NULL, 2, NULL);
-  xTaskCreate(Task6, "Task6", 2048, NULL, 1, NULL);  
-  xTaskCreate(Task7, "Task7", 1024, NULL, 1, NULL);
+  xTaskCreate(Task5, "Task5", 1024, NULL, 1, NULL);
+  xTaskCreate(Task6, "Task6", 2048, NULL, 2, NULL);  
+  xTaskCreate(Task7, "Task7", 1024, NULL, 2, NULL);
 }
 
 void Task1(void *pvParameters){
