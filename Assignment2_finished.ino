@@ -51,7 +51,7 @@ volatile unsigned long lastRiseTime3 = 0;
 //Task4
 volatile float average = 0.0;
 //Task6
-unsigned long debounce = 60;    
+unsigned long debounce = 50;    
 unsigned long last_debounce = 0;  
 volatile bool led_state = LOW;
 
@@ -79,13 +79,13 @@ void setup() {
 
   //Preemptive scheduler
   //Creating tasks
-  xTaskCreate(Task1, "Task1", 2048, NULL, 1, NULL);
-  xTaskCreate(Task2, "Task2", 2048, NULL, 1, NULL);
-  xTaskCreate(Task3, "Task3", 2048, NULL, 1, NULL);
-  xTaskCreate(Task4, "Task4", 2048, NULL, 1, NULL);
+  xTaskCreate(Task1, "Task1", 2048, NULL, 4, NULL);
+  xTaskCreate(Task2, "Task2", 2048, NULL, 2, NULL);
+  xTaskCreate(Task3, "Task3", 2048, NULL, 3, NULL);
+  xTaskCreate(Task4, "Task4", 2048, NULL, 2, NULL);
   xTaskCreate(Task5, "Task5", 2048, NULL, 1, NULL);
-  xTaskCreate(Task6, "Task6", 2048, NULL, 1, NULL);  
-  xTaskCreate(Task7, "Task7", 2048, NULL, 1, NULL);
+  xTaskCreate(Task6, "Task6", 2048, NULL, 2, NULL);  
+  xTaskCreate(Task7, "Task7", 2048, NULL, 2, NULL);
 }
 
 void Task1(void *pvParameters){
