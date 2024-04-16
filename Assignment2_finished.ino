@@ -8,10 +8,6 @@ static const BaseType_t app_cpu = 0;
 static const BaseType_t app_cpu = 1;
 #endif
 
-//Interrupt Service Routines (ISRs): In the provided code, the functions rising_edge_2() and rising_edge_3() are interrupt service routines (ISRs).
-//These functions are executed in response to external events (rising edges on specific pins). 
-//Since ISRs need to respond quickly to events, placing them in IRAM can reduce their latency and improve their responsiveness.
-
 void IRAM_ATTR rising_edge_2();
 void IRAM_ATTR rising_edge_3();
 
