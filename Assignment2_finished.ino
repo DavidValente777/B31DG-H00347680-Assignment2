@@ -260,8 +260,8 @@ void CPU_work(int time) {
 }
 
 
-void IRAM_ATTR rising_edge_2() {              //this method is used to detect the rising edges for the signal in Task2  Instruction RAM attribute
-  unsigned long currentTime = micros();       //this is placed in the instruction RAM instead of flash memory (faster)
+void IRAM_ATTR rising_edge_2() {              //this method is used to detect the rising edges for the signal in Task2  
+  unsigned long currentTime = micros();       
   if(lastRiseTime2 > 0) {
     unsigned long period = currentTime - lastRiseTime2;
 
